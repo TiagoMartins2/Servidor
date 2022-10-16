@@ -141,14 +141,15 @@ const app = express();
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
-const stream = require("stream");
 const bcrypt = require('bcrypt');
-const storage = multer.memoryStorage()
-const upload = multer({ storage });
+const upload = require("./uploadMiddle");
 const imageToUri = require('image-to-uri');
-const CryptoAlgorithm = "aes-256-cbc";
+const Resize = require('./resize');
+
+//USE BODY PARSER
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
 // Obviously keys should not be kept in code, these should be populated with environmental variables or key store
 const secret = {
@@ -182,17 +183,58 @@ var result = encryptit(body.message,res);
 
 });
 
-
-app.post("/img", upload.single('image'),(req,res)=>{
-    //MAKE THE ENCRYPTION APPEN
-    console.log(0);
-    var image = req.image;
-    console.log(1);
-    let imagem2 = imageToUri(image);
-    console.log(2);
-    var result = encryptit(image2,res);
-    console.log(3); 
+//POST THE IMAGE
+app.post("/img", upload.single('image'),async(req,res)=>{
+    //CHECK IF THERES AN FILE
+    if (!req.file) {
+      res.status(401).json({error: 'Please provide an image'});
+    }
+    //CREATE AN SALT
+    bcrypt.genSalt(16).then((salt)=>{
+    //HASH
+    bcrypt.hash(req.file.buffer.toString('base64'),salt).then((result)=>{
+    //THE RESPONSE
+    res.status(200).json({hash:result,salt:salt});
+    });
+    });
+    
 });
+
+
+//VERIFY
+app.post("/checkImg",upload.single('image'),async (req,res)=>{
+
+     //GRAB THE BODY
+     var body = req.body;
+
+    //CHECK IF THERES AN FILE
+    if (!req.file) {
+        res.status(401).json({error: 'Please provide an image'});
+      }
+    
+    
+        //HASH IT AND THEN VERIFY IT
+    bcrypt.hash(req.file.buffer.toString('base64'),body.salt).then((result)=>{
+        //VERIFY IT
+        if(body.hash===result){
+        //RESPONSE STATUS
+        res.status(200).json({response: "Validation Ok"});
+        }else{
+        //ERROR MSG
+        res.status(400).json({response: "Validation not ok"});
+        }
+    
+        }).catch((erro)=>{
+        res.status(400).json({response: "Salt format not ok"});
+        });
+     
+    
+
+})
+
+
+
+
 
 
 app.listen(port);
