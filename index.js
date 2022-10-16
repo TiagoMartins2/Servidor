@@ -136,10 +136,15 @@
 // Before all other 'require' statements
 
 const express = require("express");
+const bodyParser = require("body-parser");
 const port = 8080;
 const app = express();
 const upload = require("./uploadMiddle");
 const bcrypt = require('bcrypt');
+
+// parse various different custom JSON types as JSON
+app.use(bodyParser.json({ type: 'application/json' }))
+
 
 // Obviously keys should not be kept in code, these should be populated with environmental variables or key store
 const secret = {
@@ -177,7 +182,6 @@ res.status(400).json({"Message": error});
 app.post("/encrypt",(req,res)=>{
 //THE BODY
 var body = req.body;
-
 //MAKE THE ENCRYPTION APPEN
 encryptit(body.message,body.salt,res);
 
