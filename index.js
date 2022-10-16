@@ -145,9 +145,8 @@ const fs = require("fs");
 const path = require("path");
 const stream = require("stream");
 const bcrypt = require('bcrypt');
-
 const CryptoAlgorithm = "aes-256-cbc";
-
+var performance = require('performance');
 // Obviously keys should not be kept in code, these should be populated with environmental variables or key store
 const secret = {
     iv: Buffer.from('efb2da92cff888c9c295dc4ee682789c', 'hex'),
@@ -155,21 +154,27 @@ const secret = {
 }
 app.use(require('express-status-monitor')());
 //TO ENCRYPT
-var encryptit = (message,res) =>{
+var encryptit = (message,salt,res) =>{
+
+
 
 //GEN THE SALT
-bcrypt.genSalt(16,(err,result)=>{
-    console.log(result);
-//debug
+bcrypt.genSalt(salt).then((result)=>{
+ //debug
 console.log("STARTING THE ENCRYPTION WITH THE GIVEN SALT..");
 //HASH IT
 bcrypt.hash(message,result,(err,result_two)=>{
     //RETURN STATEMENT
     res.status(200).json({"Message": result_two});  
 });
-
-
+   
+})
+//CATCH
+.catch((error)=>{
+res.status(400).json({"Message": error});
 });
+
+
 
 
 }
@@ -196,7 +201,7 @@ app.post("/encrypt",(req,res)=>{
 var body = req.body;
 
 //MAKE THE ENCRYPTION APPEN
-var result = encryptit(body.message,res);
+encryptit(body.message,body.salt,res);
 
 });
 
