@@ -141,9 +141,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
-const stream = require("stream");
 const bcrypt = require('bcrypt');
 const CryptoAlgorithm = "aes-256-cbc";
 var performance = require('performance');
@@ -179,22 +177,6 @@ res.status(400).json({"Message": error});
 
 }
 
-
-
-app.use(express.static("./public"));
-app.use(bodyParser.json());
-
-const storage = multer.memoryStorage()
-const upload = multer({ storage });
-
-function encrypt(algorithm, buffer, key, iv) {
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
-    const encrypted = Buffer.concat([cipher.update(buffer),cipher.final()]);
-    return encrypted;
-};
-
-
-
 //FUNCTION TO ENCRYPT
 app.post("/encrypt",(req,res)=>{
 //THE BODY
@@ -205,61 +187,58 @@ encryptit(body.message,body.salt,res);
 
 });
 
-
-
-
-function decrypt(algorithm, buffer, key, iv) {
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    const decrypted = Buffer.concat([decipher.update(buffer), decipher.final()]);
-    return decrypted;
-}
-
-function getEncryptedFilePath(filePath) {
-    return path.join(path.dirname(filePath), path.basename(filePath, path.extname(filePath)) + "_encrypted" + path.extname(filePath))
-}
-
-function saveEncryptedFile(buffer, filePath, key, iv) {
-    const encrypted = encrypt(CryptoAlgorithm, buffer, key, iv);
-
-    filePath = getEncryptedFilePath(filePath);
-    if (!fs.existsSync(path.dirname(filePath))) {
-        fs.mkdirSync(path.dirname(filePath))
+//POST THE IMAGE
+app.post("/img", upload.single('image'),async(req,res)=>{
+    //CHECK IF THERES AN FILE
+    if (!req.file) {
+      res.status(401).json({error: 'Please provide an image'});
     }
-
-    fs.writeFileSync(filePath, encrypted);
-}
-
-function getEncryptedFile(filePath, key, iv) {
-    filePath = getEncryptedFilePath(filePath);
-    const encrypted = fs.readFileSync(filePath);
-    const buffer = decrypt(CryptoAlgorithm, encrypted, key, iv);
-    return buffer;
-}
-
-app.post("/upload", upload.single("file"),  (req, res, next) => {
-    console.log("file upload: ", req.file.originalname);
-    saveEncryptedFile(req.file.buffer, path.join("./uploads", req.file.originalname), secret.key, secret.iv);
-    res.status(201).json( { status: "ok" });
-});
-
-app.get("/file/:fileName", (req, res, next) => {
-    console.log("Getting file:", req.params.fileName);
-    const buffer = getEncryptedFile(path.join("./uploads", req.params.fileName), secret.key, secret.iv);
-    const readStream = new stream.PassThrough();
-    readStream.end(buffer);
-    res.writeHead(200, {
-        "Content-disposition": "attachment; filename=" + req.params.fileName,
-        "Content-Type": "application/octet-stream",
-        "Content-Length": buffer.length
+    //CREATE AN SALT
+    bcrypt.genSalt(16).then((salt)=>{
+    //HASH
+    bcrypt.hash(req.file.buffer.toString('base64'),salt).then((result)=>{
+    //THE RESPONSE
+    res.status(200).json({hash:result,salt:salt});
     });
-    res.end(buffer);
+    });
+    
 });
 
 
-app.get("/try",(req,res)=>{
-    console.log("lol");
-    res.json({"k": "k"});
+//VERIFY
+app.post("/checkImg",upload.single('image'),async (req,res)=>{
+
+     //GRAB THE BODY
+     var body = req.body;
+
+    //CHECK IF THERES AN FILE
+    if (!req.file) {
+        res.status(401).json({error: 'Please provide an image'});
+      }
+    
+    
+        //HASH IT AND THEN VERIFY IT
+    bcrypt.hash(req.file.buffer.toString('base64'),body.salt).then((result)=>{
+        //VERIFY IT
+        if(body.hash===result){
+        //RESPONSE STATUS
+        res.status(200).json({response: "Validation Ok"});
+        }else{
+        //ERROR MSG
+        res.status(400).json({response: "Validation not ok"});
+        }
+    
+        }).catch((erro)=>{
+        res.status(400).json({response: "Salt format not ok"});
+        });
+     
+    
+
 })
+
+
+
+
 
 
 app.listen(port);
