@@ -138,13 +138,9 @@
 const express = require("express");
 const port = 8080;
 const app = express();
-const bodyParser = require("body-parser");
-const multer = require("multer");
-const crypto = require("crypto");
-const path = require("path");
+const upload = require("./uploadMiddle");
 const bcrypt = require('bcrypt');
-const CryptoAlgorithm = "aes-256-cbc";
-var performance = require('performance');
+
 // Obviously keys should not be kept in code, these should be populated with environmental variables or key store
 const secret = {
     iv: Buffer.from('efb2da92cff888c9c295dc4ee682789c', 'hex'),
