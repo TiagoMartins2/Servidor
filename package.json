@@ -21,6 +21,7 @@
     "image-hash": "^5.3.1",
     "image-to-uri": "^1.0.0",
     "multer": "^1.4.5-lts.1",
+    "node-tick-processor": "^0.0.2",
     "performance": "^1.4.0",
     "simple-ddos": "^2.0.4"
   },
