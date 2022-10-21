@@ -142,6 +142,8 @@ const app = express();
 const upload = require("./uploadMiddle");
 const bcrypt = require('bcrypt');
 
+var pedido = 0;
+
 // parse various different custom JSON types as JSON
 app.use(bodyParser.json({ type: 'application/json' }))
 
@@ -154,17 +156,25 @@ const secret = {
 app.use(require('express-status-monitor')());
 //TO ENCRYPT
 var encryptit = (message,salt,res) =>{
-
-
+pedido+=1;
+console.log(pedido);
 
 //GEN THE SALT
 bcrypt.genSalt(salt).then((result)=>{
  //debug
-console.log("STARTING THE ENCRYPTION WITH THE GIVEN SALT..");
+
 //HASH IT
 bcrypt.hash(message,result,(err,result_two)=>{
-    //RETURN STATEMENT
-    res.status(200).json({"Message": result_two});  
+     
+    bcrypt.hash(result_two,20).then(
+        (another)=>{
+            console.log(another);
+            //RETURN STATEMENT
+    res.status(200).json({"Message": another});  
+        }
+    )
+
+    
 });
    
 })
@@ -173,19 +183,20 @@ bcrypt.hash(message,result,(err,result_two)=>{
 res.status(400).json({"Message": error});
 });
 
-
-
-
 }
 
-//FUNCTION TO ENCRYPT
+
+//ANOTHER ROUTE
 app.post("/encrypt",(req,res)=>{
-//THE BODY
+ //THE BODY
 var body = req.body;
 //MAKE THE ENCRYPTION APPEN
-encryptit(body.message,body.salt,res);
+encryptit(body.message,body.salt,res);   
+})
 
-});
+
+
+
 
 //POST THE IMAGE
 app.post("/img", upload.single('image'),async(req,res)=>{
@@ -197,6 +208,7 @@ app.post("/img", upload.single('image'),async(req,res)=>{
     bcrypt.genSalt(16).then((salt)=>{
     //HASH
     bcrypt.hash(req.file.buffer.toString('base64'),salt).then((result)=>{
+        
     //THE RESPONSE
     res.status(200).json({hash:result,salt:salt});
     });
@@ -241,8 +253,8 @@ app.post("/checkImg",upload.single('image'),async (req,res)=>{
 
 
 
-app.listen(port);
-console.log(`Serving at http://localhost:${port}`);
+app.listen(8080);
+console.log(`Serving at http://localhost:${2000}`);
 
 
 

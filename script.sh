@@ -1,0 +1,36 @@
+#!/usr/bin/bash 
+#STARTING THE INITIAL SERVER
+node index&
+#SLEEP IT FOR X SECONDS
+sleep 1;
+#KILL THE PORT 8080
+kill $(lsof -t -i:8080);
+
+#ADDING 3 CLUSTERS MESSAGE
+echo ADDING 3 CLUSTERS;
+#ADD 3 CLUSTERS
+node index 3&
+#SLEEP IT FOR X SECOUNDS
+sleep 1;
+#KILL THE PORT 8080
+kill $(lsof -t -i:8080);
+
+
+#ADDING 6 CLUSTERS MESSAGE
+echo ADDING 6 CLUSTERS;
+#ADD 6 CLUSTERS
+node index 6&
+#SLEEP IT FOR X SECOUNDS
+sleep 1;
+#KILL THE PORT 8080
+kill $(lsof -t -i:8080);
+
+
+#ADDING 9 CLUSTERS MESSAGE
+echo ADDING 9 CLUSTERS;
+#ADD 9 CLUSTERS
+node index 9;
+ 
+
+
+
